@@ -3,6 +3,7 @@ from threading import Thread
 from time import sleep
 import uuid
 import json
+from bottle import route, run, request
 
 UDP_IP = '192.168.1.255'
 UDP_PORT = 4455
@@ -33,6 +34,7 @@ class ListeningThread(Thread):
         self.port = port
 
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM) 
+        self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.sock.bind((ip, port))
 
     def run(self):
@@ -49,9 +51,11 @@ def send_message(message):
     client.start()
     client.join()
 
+@route('/command', method='POST')
+def handle_command():
+    print request.json
+
 listener = ListeningThread(UDP_IP, UDP_PORT)
 listener.start()
 
-while True:
-    prompt = raw_input()
-    send_message(prompt)
+run(host='localhost', port=8080, debug=True, reloader=True)
