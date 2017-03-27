@@ -1,0 +1,32 @@
+{
+  "blocks": [{
+    "id": "B1",
+    "miner": "ZZZ",
+    "proof": "12456789",
+    "transactions": [{
+      "sender": "XXX",
+      "recipient": "YYY",
+      "amount": 10
+    }]
+  }, {
+    "id": "B2",
+    "previous": "B1",
+    "miner": "ZZZ",
+    "proof": "12456789",
+    "transactions": [{
+      "sender": "XXX",
+      "recipient": "YYY",
+      "amount": 10
+    }]
+  }, {
+    "id": "B3",
+    "previous": "B2",
+    "miner": "ZZZ",
+    "proof": "12456789",
+    "transactions": [{
+      "sender": "XXX",
+      "recipient": "YYY",
+      "amount": 10
+    }]
+  }]
+}
