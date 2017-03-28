@@ -2,6 +2,8 @@ import hashlib
 import json
 import socket
 import uuid
+
+from sets import Set
 from itertools import product
 from string import printable
 from threading import Thread
@@ -26,17 +28,31 @@ class CommandHandler:
     def __init__(self):
         self.blockchain_initialized = False
         self.blockchain = []
+        self.facts_pool = Set()
 
     def execute(self, command, args, sender):
-        print "Command received : ", sender, command, args,
+        print "Command received: ", sender, command, args,
         {
             'broadcast_blockchain': self.broadcast_blockchain,
-            'set_blockchain': self.set_blockchain
+            'set_blockchain': self.set_blockchain,
+            'broadcast_facts': self.broadcast_facts,
+	    'set_facts': self.set_facts
         }.get(command, self.command_not_found)(command, args)
 
     def broadcast_blockchain(self, command, args):
-        print "Broadcasting blockchain : ", self.blockchain
+        print "Broadcasting blockchain as requested: ", self.blockchain
         send_message("set_blockchain", {'blockchain': self.blockchain})
+
+    def broadcast_facts(self, command, args):
+        print "Broadcasting facts as requested: ", self.facts
+        send_message("set_facts", {'facts': self.facts_pool})
+
+    def set_facts(self, command, args):
+        print "Facts received..."
+        for t in args['facts']:
+            self.facts_pool.add(Transaction.from_dict(t))
+        print "New facts pool:", self.facts_pool
+
 
     def set_blockchain(self, command, args):
         print "Blockchain received..."
@@ -94,7 +110,8 @@ class ListeningThread(Thread):
 
 
 class Transaction:
-    def __init__(self, sender, recipient, amount):
+    def __init__(self, id, sender, recipient, amount):
+        self.id = id
         self.sender = sender
         self.recipient = recipient
         self.amount = amount
