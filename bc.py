@@ -14,9 +14,46 @@ UID = str(uuid.uuid4())
 
 DIFFICULTY = 2
 
-# 0. Initialize the blockchain as an empty array
-def blockchain = []
-def blockchain_initialized = false
+
+def send_message(name, parameters={}):
+    data = {'sender': UID, 'name': name, 'parameters': parameters}
+    client = ClientThread(UDP_IP, UDP_PORT, json.dumps(data))
+    client.start()
+    client.join()
+
+
+class CommandHandler:
+    def __init__(self):
+        self.blockchain_initialized = False
+        self.blockchain = []
+
+    def execute(self, command, args):
+        print "received command:", command, args
+        {
+            'broadcast_blockchain': self.broadcast_blockchain,
+            'set_blockchain': self.set_blockchain
+        }.get(command, self.command_not_found)(command, args)
+
+    def broadcast_blockchain(self, command, args):
+        print "Broadcasting blockchain : ", self.blockchain
+        send_message("blockchain", {'blockchain': self.blockchain})
+
+    def set_blockchain(self, command, args):
+        print "Blockchain received..."
+
+        if not self.blockchain_initialized:
+            print "Blockchain not initialized : new blockchain updated."
+            self.blockchain = [Block.from_dict(t) for t in args['blockchain']]
+            self.blockchain_initialized = True
+        else:
+            print "Blockchain already initialized : new blockchain ignored."
+
+    def command_not_found(self, command, args):
+        print "Command not found :", command, args
+
+
+command_handler = CommandHandler()
+
 
 class ClientThread(Thread):
     def __init__(self, ip, port, message):
@@ -53,20 +90,7 @@ class ListeningThread(Thread):
             data_json = json.loads(data)
 
             if data_json['sender'] != UID:
-                CommandHandler().execute(data_json['name'], data_json.get('parameters', {}))
-
-class CommandHandler:
-    def execute(self, command, args):
-        print "received command:", command, args
-        switch command:
-            case "getblockchain":
-                send_message("blockchain", { 'blockchain': blockchain })
-            # 1. Initialize local blockchain from info received by other members (naive approach)
-            case "blockchain":
-                if !blockchain_initialized:
-                    blockchain = [Block.from_dict(t) for t in args['blockchain']]
-                    blockchain_initialized = true
-            # 2. React to block chain updates from other users: verify ?
+                command_handler.execute(data_json['name'], data_json.get('parameters', {}))
 
 
 class Transaction:
@@ -149,17 +173,10 @@ class Block:
                 if hash[:DIFFICULTY] == '0' * DIFFICULTY:
                     return Block(id, miner, proof, transactions)
 
-def send_message(name, parameters):
-    data = {'sender': UID, 'name': name, 'parameters': parameters}
-    client = ClientThread(UDP_IP, UDP_PORT, json.dumps(data))
-    client.start()
-    client.join()
-
 
 @route('/command', method='POST')
 def handle_command():
-    CommandHandler().execute(request.json['name'], request.json.get('parameters', {}))
-
+    command_handler.execute(request.json['name'], request.json.get('parameters', {}))
 
 
 # TODO
@@ -175,15 +192,15 @@ def handle_command():
 # 1. Read the blockchain status on init
 # Ask for other users on the network
 def read_blockchain():
-    send_message('getblockchain')
+    send_message('broadcast_blockchain')
 
-
-print 'Mining...'
-b = Block.mine('Alice', [
-    Transaction('Maxime', 'Jon', 100),
-    Transaction('Jon', 'Maxime', 30),
-])
-print 'Done : ', b.to_dict()
+#
+# print 'Mining...'
+# b = Block.mine('Alice', [
+#     Transaction('Maxime', 'Jon', 100),
+#     Transaction('Jon', 'Maxime', 30),
+# ])
+# print 'Done : ', b.to_dict()
 
 listener = ListeningThread(UDP_IP, UDP_PORT)
 listener.start()
