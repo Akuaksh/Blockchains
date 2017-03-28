@@ -20,27 +20,21 @@ class TransactionPool:
 
 class BlockchainService:
     def __init__(self):
-        self.blockchain = []
+        self.blockchains = []
         self.facts_pool = set()
 
     def get_blockchain(self):
-        return self.blockchain
+        return self.blockchains[0]
 
     def get_last_block(self):
-        return self.blockchain[0]
+        return self.get_blockchain().get_last_block()
 
     def update_blockchain(self, blockchain):
-        pass
-
-    # def set_blockchain(self, command, args):
-    #     print "Blockchain received..."
-    #
-    #     if not self.blockchain_initialized:
-    #         print "Blockchain not initialized : new blockchain updated."
-    #         self.blockchain = [Block.from_dict(t) for t in args['blockchain']]
-    #         self.blockchain_initialized = True
-    #     else:
-    #         print "Blockchain already initialized : new blockchain ignored."
+        if blockchain.length() > self.get_blockchain().length():
+            if blockchain.contains_ancestor(self.get_last_block()):
+                self.blockchains = [blockchain]
+        else:
+            self.add_fork_if_valid(blockchain)
 
     def mine(self, miner, transactions):
         id = str(uuid.uuid4())
@@ -54,3 +48,6 @@ class BlockchainService:
                 ).hexdigest()
                 if hash[:DIFFICULTY] == '0' * DIFFICULTY:
                     return Block(id, miner, proof, transactions, previous_block_id)
+
+    def add_fork_if_valid(self, blockchain):
+        pass

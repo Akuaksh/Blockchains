@@ -3,6 +3,7 @@ import socket
 from threading import Thread
 
 from config import UID, UDP_IP, UDP_PORT
+from models import Blockchain, Transaction
 
 
 class ClientThread(Thread):
@@ -40,26 +41,30 @@ class CommandHandler:
         {
             'broadcast_blockchain': self.broadcast_blockchain,
             'set_blockchain': self.set_blockchain,
-            'broadcast_facts': self.broadcast_facts,
-            'set_facts': self.set_facts
+            'broadcast_Transactions': self.broadcast_transactions,
+            'set_Transactions': self.set_transactions
         }.get(command, self.command_not_found)(command, args)
 
     def broadcast_blockchain(self, command, args):
         print "Broadcasting blockchain as requested: ", self.blockchain_service.get_blockchain()
         send_message("set_blockchain", {'blockchain': self.blockchain_service.get_blockchain()})
 
-    def broadcast_facts(self, command, args):
-        print "Broadcasting facts as requested: ", self.transaction_pool.get_transactions()
-        send_message("set_facts", {'facts': self.transaction_pool.get_transactions()})
+    def broadcast_transactions(self, command, args):
+        print "Broadcasting Transactions as requested: ", self.transaction_pool.get_transactions()
+        send_message("set_transactions", {'transactions': self.transaction_pool.get_transactions()})
 
-    def set_facts(self, command, args):
-        print "Facts received..."
-        self.transaction_pool.update_transactions(args['facts'])
-        print "New facts pool:", self.transaction_pool.get_transactions()
+    def set_transactions(self, command, args):
+        print "Transactions received..."
+        self.transaction_pool.update_transactions(
+            [Transaction.from_dict(t) for t in args['transactions']]
+        )
+        print "New Transactions pool:", self.transaction_pool.get_transactions()
 
     def set_blockchain(self, command, args):
         print "Blockchain received..."
-        self.blockchain_service.update_blockchain(args['blockchain'])
+        self.blockchain_service.update_blockchain(
+            Blockchain.from_dict(args['blockchain'])
+        )
 
     def command_not_found(self, command, args):
         print "Command not found :", command, args

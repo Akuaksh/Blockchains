@@ -41,6 +41,9 @@ class Block:
         if not self.is_verified():
             raise RuntimeError('The block cannot be verified with the provided proof.')
 
+    def __eq__(self, other):
+        return self.id == other.id
+
     def payload(self):
         return Block.generate_payload(
             self.id,
@@ -78,3 +81,30 @@ class Block:
         return '__'.join(
             [id, miner, proof, previous_block_id] + [t.payload() for t in transactions]
         )
+
+
+class Blockchain:
+    # noinspection PyDefaultArgument
+    def __init__(self, blocks=[]):
+        self.blocks = blocks
+
+    def add_block(self, block):
+        self.blocks = [block] + self.blocks
+
+    def get_last_block(self):
+        return self.blocks[0]
+
+    def contains_ancestor(self, block):
+        return block in self.blocks
+
+    def length(self):
+        return len(self.blocks)
+
+    def to_dict(self):
+        return {
+            'blocks': [b.to_dict() for b in self.blocks],
+        }
+
+    @classmethod
+    def from_dict(cls, param):
+        return Blockchain([Block.from_dict(b) for b in param['blocks']])
