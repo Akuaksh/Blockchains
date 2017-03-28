@@ -47,11 +47,11 @@ class CommandHandler:
 
     def broadcast_blockchain(self, command, args):
         print "Broadcasting blockchain as requested: ", self.blockchain_service.get_blockchain()
-        send_message("set_blockchain", {'blockchain': self.blockchain_service.get_blockchain()})
+        send_message("set_blockchain", {'blockchain': self.blockchain_service.get_blockchain().to_dict()})
 
     def broadcast_transactions(self, command, args):
         print "Broadcasting Transactions as requested: ", self.transaction_pool.get_transactions()
-        send_message("set_transactions", {'transactions': self.transaction_pool.get_transactions()})
+        send_message("set_transactions", {'transactions': [t.to_dict() for t in self.transaction_pool.get_transactions()]})
 
     def set_transactions(self, command, args):
         print "Transactions received..."

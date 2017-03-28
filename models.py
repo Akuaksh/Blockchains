@@ -42,7 +42,7 @@ class Block:
             raise RuntimeError('The block cannot be verified with the provided proof.')
 
     def __eq__(self, other):
-        return self.id == other.id
+        return self.id == other.id if other is not None else False
 
     def payload(self):
         return Block.generate_payload(
@@ -92,10 +92,11 @@ class Blockchain:
         self.blocks = [block] + self.blocks
 
     def get_last_block(self):
-        return self.blocks[0]
+        return self.blocks[0] if len(self.blocks) > 0 else None
 
     def contains_ancestor(self, block):
-        return block in self.blocks
+        return (block is None and self.length() == 1) or \
+            (block in self.blocks)
 
     def length(self):
         return len(self.blocks)

@@ -4,7 +4,7 @@ from itertools import product
 from string import printable
 
 from config import DIFFICULTY
-from models import Block
+from models import Block, Blockchain
 
 
 class TransactionPool:
@@ -16,12 +16,12 @@ class TransactionPool:
 
     def update_transactions(self, transactions):
         self.transactions = self.transactions.union(transactions)
+        print "transation pool updated: ", self.transactions
 
 
 class BlockchainService:
     def __init__(self):
-        self.blockchains = []
-        self.facts_pool = set()
+        self.blockchains = [Blockchain()]
 
     def get_blockchain(self):
         return self.blockchains[0]
@@ -33,12 +33,18 @@ class BlockchainService:
         if blockchain.length() > self.get_blockchain().length():
             if blockchain.contains_ancestor(self.get_last_block()):
                 self.blockchains = [blockchain]
+                print "blockchain updated: ", self.blockchains
         else:
             self.add_fork_if_valid(blockchain)
 
-    def mine(self, miner, transactions):
+    def add_fork_if_valid(self, blockchain):
+        pass
+
+class BlockService:
+    def mine(self, miner, transactions, previous_block = None):
+        print "Start mining block: ", transactions, previous_block
         id = str(uuid.uuid4())
-        previous_block_id = self.get_last_block().id
+        previous_block_id = previous_block.id if previous_block is not None else '-1'
 
         for length in [1, 10]:
             for proof_chars in product(printable, repeat=length):
@@ -47,7 +53,6 @@ class BlockchainService:
                     Block.generate_payload(id, miner, proof, transactions, previous_block_id)
                 ).hexdigest()
                 if hash[:DIFFICULTY] == '0' * DIFFICULTY:
-                    return Block(id, miner, proof, transactions, previous_block_id)
-
-    def add_fork_if_valid(self, blockchain):
-        pass
+                    block =  Block(id, miner, proof, transactions, previous_block_id)
+                    print "Block successfully mined: ", block
+                    return block
