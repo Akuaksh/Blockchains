@@ -14,6 +14,9 @@ UID = str(uuid.uuid4())
 
 DIFFICULTY = 2
 
+# 0. Initialize the blockchain as an empty array
+def blockchain = []
+def blockchain_initialized = false
 
 class ClientThread(Thread):
     def __init__(self, ip, port, message):
@@ -50,7 +53,20 @@ class ListeningThread(Thread):
             data_json = json.loads(data)
 
             if data_json['sender'] != UID:
-                print "received message:", data_json['message']
+                CommandHandler().execute(data_json['name'], data_json.get('parameters', {}))
+
+class CommandHandler:
+    def execute(self, command, args):
+        print "received command:", command, args
+        switch command:
+            case "getblockchain":
+                send_message("blockchain", { 'blockchain': blockchain })
+            # 1. Initialize local blockchain from info received by other members (naive approach)
+            case "blockchain":
+                if !blockchain_initialized:
+                    blockchain = [Block.from_dict(t) for t in args['blockchain']]
+                    blockchain_initialized = true
+            # 2. React to block chain updates from other users: verify ?
 
 
 class Transaction:
@@ -133,17 +149,8 @@ class Block:
                 if hash[:DIFFICULTY] == '0' * DIFFICULTY:
                     return Block(id, miner, proof, transactions)
 
-
-print 'Mining...'
-b = Block.mine('Alice', [
-    Transaction('Maxime', 'Jon', 100),
-    Transaction('Jon', 'Maxime', 30),
-])
-print 'Done : ', b.to_dict()
-
-
-def send_message(message):
-    data = {'sender': UID, 'message': message}
+def send_message(name, parameters):
+    data = {'sender': UID, 'name': name, 'parameters': parameters}
     client = ClientThread(UDP_IP, UDP_PORT, json.dumps(data))
     client.start()
     client.join()
@@ -151,8 +158,32 @@ def send_message(message):
 
 @route('/command', method='POST')
 def handle_command():
-    print request.json
+    CommandHandler().execute(request.json['name'], request.json.get('parameters', {}))
 
+
+
+# TODO
+
+# If, i'm a miner : check the transaction pool for new transactions at x sec interval
+# => The pool is not empty : take n transaction and mine
+# => Else, wait
+
+# When a new block is formed, send a message to others : send proof ?
+
+
+
+# 1. Read the blockchain status on init
+# Ask for other users on the network
+def read_blockchain():
+    send_message('getblockchain')
+
+
+print 'Mining...'
+b = Block.mine('Alice', [
+    Transaction('Maxime', 'Jon', 100),
+    Transaction('Jon', 'Maxime', 30),
+])
+print 'Done : ', b.to_dict()
 
 listener = ListeningThread(UDP_IP, UDP_PORT)
 listener.start()
