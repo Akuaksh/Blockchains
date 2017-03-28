@@ -6,7 +6,7 @@ from itertools import product
 from string import printable
 from threading import Thread
 
-from bottle import route, run, request
+from bottle import route, request, run
 
 UDP_IP = '192.168.1.255'
 UDP_PORT = 4455
@@ -27,8 +27,8 @@ class CommandHandler:
         self.blockchain_initialized = False
         self.blockchain = []
 
-    def execute(self, command, args):
-        print "received command:", command, args
+    def execute(self, command, args, sender):
+        print "Command received : ", sender, command, args,
         {
             'broadcast_blockchain': self.broadcast_blockchain,
             'set_blockchain': self.set_blockchain
@@ -36,7 +36,7 @@ class CommandHandler:
 
     def broadcast_blockchain(self, command, args):
         print "Broadcasting blockchain : ", self.blockchain
-        send_message("blockchain", {'blockchain': self.blockchain})
+        send_message("set_blockchain", {'blockchain': self.blockchain})
 
     def set_blockchain(self, command, args):
         print "Blockchain received..."
@@ -90,7 +90,7 @@ class ListeningThread(Thread):
             data_json = json.loads(data)
 
             if data_json['sender'] != UID:
-                command_handler.execute(data_json['name'], data_json.get('parameters', {}))
+                command_handler.execute(data_json['name'], data_json.get('parameters', {}), data_json['sender'])
 
 
 class Transaction:
@@ -191,8 +191,9 @@ def handle_command():
 
 # 1. Read the blockchain status on init
 # Ask for other users on the network
-def read_blockchain():
+def retrieve_blockchain():
     send_message('broadcast_blockchain')
+
 
 #
 # print 'Mining...'
@@ -202,7 +203,15 @@ def read_blockchain():
 # ])
 # print 'Done : ', b.to_dict()
 
-listener = ListeningThread(UDP_IP, UDP_PORT)
-listener.start()
+def main():
+    print "Launching BitEcu client with UID : ", UID
 
-run(host='localhost', port=8080, debug=True, reloader=True)
+    listener = ListeningThread(UDP_IP, UDP_PORT)
+    listener.start()
+
+    retrieve_blockchain()
+
+    run(host='localhost', port=8080, debug=True)
+
+
+main()
