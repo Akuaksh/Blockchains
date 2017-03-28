@@ -15,6 +15,7 @@ class Transaction:
 
     def to_dict(self):
         return {
+            'id': self.id,
             'sender': self.sender,
             'recipient': self.recipient,
             'amount': self.amount
@@ -96,7 +97,7 @@ class Blockchain:
 
     def contains_ancestor(self, block):
         return (block is None and self.length() == 1) or \
-            (block in self.blocks)
+               (block in self.blocks)
 
     def length(self):
         return len(self.blocks)
